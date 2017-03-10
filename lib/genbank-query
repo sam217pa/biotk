@@ -1,0 +1,89 @@
+#!/usr/bin/env perl
+#
+use feature ':5.10';
+use strict;
+use warnings;
+use Getopt::Long qw(GetOptions);
+use Pod::Usage qw(pod2usage);
+
+my $VERSION = "1.0";
+my $man = 0;
+my $help = 0;
+
+use Bio::DB::GenBank;
+use Bio::DB::Query::GenBank;
+
+pod2usage("$0: No query given.")  if ((@ARGV == 0) && (-t STDIN));
+
+my ($query) = @ARGV;
+
+if (not defined $query) {
+  $query = "";
+}
+
+GetOptions(
+           'query=s' => \$query,
+           'help|?'  => \$help,
+           man       => \$man,
+          ) or pod2usage(2);
+
+pod2usage(1) if $help;
+pod2usage(-verbose => 2) if $man;
+
+
+
+# declare variables
+my $query_obj = Bio::DB::Query::GenBank->new(-db => 'nucleotide',
+                                             -query => $query );
+my $gb_obj = Bio::DB::GenBank->new;
+my $stream_obj = $gb_obj->get_Stream_by_query($query_obj);
+
+while (my $seq_obj = $stream_obj->next_seq) {
+  print ">", $seq_obj->display_id, "|",
+    $seq_obj->length, "|",
+    $seq_obj->description, "\n";
+  say for unpack "(A70)*", $seq_obj->seq;
+}
+
+__END__
+
+=head1 NAME
+
+genbank-query - Download nucleotide sequence matching NCBI query
+
+=head1 SYNOPSIS
+
+  genbank-query [options] query
+
+  Options:
+    --query -q   genbank accession number
+    --help  -h   brief help message
+    --man   -m   full documentation
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<--query>
+
+Query sequences. Can be an accession number, a string query or anything.
+
+=item B<--help>
+
+Print a brief help message and exit.
+
+=item B<--man>
+
+Prints the manual page and exits.
+
+=back
+
+=head1 DESCRIPTION
+
+This perl scripts parse the given accession number, download corresponding
+sequences and prints them to stdout in a fasta format.
+
+    >ACCESSION_NUMBER|LENGTH|DESCRIPTION
+    ACTGCAT
+
+=cut
