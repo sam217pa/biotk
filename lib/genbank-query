@@ -21,8 +21,11 @@ if (not defined $query) {
   $query = "";
 }
 
+my $database = 'nucleotide';
+
 GetOptions(
            'query=s' => \$query,
+           'db=s'    => \$database,
            'help|?'  => \$help,
            man       => \$man,
           ) or pod2usage(2);
@@ -33,7 +36,7 @@ pod2usage(-verbose => 2) if $man;
 
 
 # declare variables
-my $query_obj = Bio::DB::Query::GenBank->new(-db => 'nucleotide',
+my $query_obj = Bio::DB::Query::GenBank->new(-db    => $database,
                                              -query => $query );
 my $gb_obj = Bio::DB::GenBank->new;
 my $stream_obj = $gb_obj->get_Stream_by_query($query_obj);
@@ -57,6 +60,7 @@ genbank-query - Download nucleotide sequence matching NCBI query
 
   Options:
     --query -q   genbank accession number
+    --db    -d   database to query. Defaults to 'nucleotide'.
     --help  -h   brief help message
     --man   -m   full documentation
 
@@ -67,6 +71,20 @@ genbank-query - Download nucleotide sequence matching NCBI query
 =item B<--query>
 
 Query sequences. Can be an accession number, a string query or anything.
+
+=item B<--database>
+
+Database to query. Defauts to nucleotide. Other options are one of :
+
+    protein
+    nucleotide
+    nuccore
+    nucgss
+    nucest
+    unigene
+
+See https://metacpan.org/pod/Bio::DB::Query::GenBank#new for further
+informations.
 
 =item B<--help>
 
