@@ -1,0 +1,99 @@
+#!/usr/bin/env perl
+
+use v5.10;
+use strict;
+use warnings;
+use Text::Wrap;
+use Getopt::Long qw(GetOptions);
+use Pod::Usage qw(pod2usage);
+
+
+my $man = 0;
+my $help = 0;
+
+GetOptions(
+           'help|?'  => \$help,
+           man       => \$man,
+          ) or pod2usage(2);
+
+pod2usage(1) if $help;
+pod2usage(-verbose => 2) if $man;
+
+# wrap output sequence at 70 character.
+$Text::Wrap::columns = 70;
+
+# initialize an empty hash table, where keys are sequence name and values are
+# sequence.
+my %seq_array = ();
+
+if (!-t STDIN) {
+
+  # for each line in stdin
+  while (my $var = <STDIN>) {
+    # keep only line that corresponds to an alignment.
+    # TODO: FRAGILE, should correct.
+    # remove lines containing mismatch infos (*** characters)
+    if (length $var >= 60 and $var !~ /\*+/) {
+
+      # split at whitespace.
+      # array[0] contains sequence name, array[1] contains sequence.
+      my @seqname_seq = split(/\s+/, $var);
+
+      # populate hash table.
+      if (exists( $seq_array{$seqname_seq[0]})) {
+        # concatenate with previous sequence if key is already in hash table.
+        $seq_array{$seqname_seq[0]} .= $seqname_seq[1];
+      } else {
+        $seq_array{$seqname_seq[0]} = $seqname_seq[1];
+      }
+    }
+  }
+
+  foreach my $seqname (keys(%seq_array)) {
+    say ">$seqname";
+    my $text = "$seq_array{$seqname}";
+    # output sequence wrapped at 70 characters.
+    say wrap('', '', $text);
+  }
+
+} else {
+  pod2usage("$0: No clustal sequence input.");
+}
+
+
+__END__
+
+=head1 NAME
+
+clustal-to-fasta - convert clustalw output in fasta format.
+
+=head1 SYNOPSIS
+
+  clustal-to-fasta < STDIN
+
+  Options:
+    --help  -h   brief help message
+    --man   -m   full documentation
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<--help>
+
+Print a brief help message and exit.
+
+=item B<--man>
+
+Prints the manual page and exits.
+
+=back
+
+=head1 DESCRIPTION
+
+This perl script parse the clustalw output of the MUSCLE (3.8) multiple sequence
+alignment ClustalW format (-clw option) and output it in FASTA format.
+
+It is convenient for quick alignment editing and back to fasta format.
+
+=cut
