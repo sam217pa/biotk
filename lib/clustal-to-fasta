@@ -7,12 +7,15 @@ use Text::Wrap;
 use Getopt::Long qw(GetOptions);
 use Pod::Usage qw(pod2usage);
 
-
 my $man = 0;
 my $help = 0;
+my $split = 0;
+my $line1 = 0;
 
 GetOptions(
            'help|?'  => \$help,
+           'line1|?' => \$line1,
+           'split|?' => \$split,
            man       => \$man,
           ) or pod2usage(2);
 
@@ -49,13 +52,35 @@ if (!-t STDIN) {
     }
   }
 
-  foreach my $seqname (keys(%seq_array)) {
-    say ">$seqname";
-    my $text = "$seq_array{$seqname}";
-    # output sequence wrapped at 70 characters.
-    say wrap('', '', $text);
-  }
+  if ($split == 1) {
+    foreach my $seqname (keys(%seq_array)) {
+      my $outfile = lc "$seqname.fasta";
+      say "Writing to $outfile";
 
+      open (my $file, '>', $outfile) or die "Could not open file '$outfile' $!";
+      say $file ">$seqname";
+      my $text = "$seq_array{$seqname}";
+      # output sequence wrapped at 70 characters.
+      say $file wrap('', '', $text);
+      close $file;
+    }
+  }
+  elsif ($line1 == 1) {
+    foreach my $seqname (keys(%seq_array)) {
+      printf "%-20s", $seqname;
+      printf "    ";
+      my $text = "$seq_array{$seqname}";
+      # output sequence wrapped at 70 characters.
+      print $text . "\n";
+    }
+  } else {
+    foreach my $seqname (keys(%seq_array)) {
+      say ">$seqname";
+      my $text = "$seq_array{$seqname}";
+      # output sequence wrapped at 70 characters.
+      say wrap('', '', $text);
+    }
+  }
 } else {
   pod2usage("$0: No clustal sequence input.");
 }
@@ -72,12 +97,25 @@ clustal-to-fasta - convert clustalw output in fasta format.
   clustal-to-fasta < STDIN
 
   Options:
+    --split -s   split output in single file FASTA
+    --line1 -l   convert to one line clustal
     --help  -h   brief help message
     --man   -m   full documentation
 
 =head1 OPTIONS
 
 =over 4
+
+=item B<--line1>
+
+Convert multi-line clustal to one line per sequence clustal. Convenient for
+visualisation of alignments in editor.
+
+=item B<--split>
+
+When clustal-to-fasta is called with --split, the output will be written in as
+many FASTA files as different sequences in the clustalw file. File will be named
+after their FASTA header.
 
 =item B<--help>
 
@@ -96,4 +134,4 @@ alignment ClustalW format (-clw option) and output it in FASTA format.
 
 It is convenient for quick alignment editing and back to fasta format.
 
-=cut
+  =cut
