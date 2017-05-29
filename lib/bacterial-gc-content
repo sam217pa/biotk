@@ -2,32 +2,43 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-#' USAGE:
-#'
-#'  bacterial-gc-content <species-name>
-#'
-#' DESCRIPTION:
-#'
-#'   Get mean GC-content of a bacterial species.
-#'   Average over all the item found in the dataset.
-#'
-#' EXAMPLES:
-#'
-#'  bacterial-gc-content Escherichia
-#'
-#' OPTIONS:
-#'
-#'   --help: Display this help message
+usage() {
+    cat <<END_DOC
+USAGE:
 
-usage() { grep "^#'" "$0" | cut -c4- ; exit 0 ; }
+  bio bacterial-gc-content <species-name>
+
+DESCRIPTION:
+
+  Get mean GC-content of a bacterial species. Average over all the item
+  found in the dataset. This might be roughly correct but gives a basic
+  idea.
+
+EXAMPLES:
+
+    $ bacterial-gc-content Escherichia
+
+OPTIONS:
+
+  --help: Display this help message
+
+AUTHOR:
+
+  Samuel Barreto, (2017-05-29)
+
+END_DOC
+
+    exit 0
+}
+
 expr "$*" : ".*--help" > /dev/null && usage
 if [ $# -eq 0 ]; then > /dev/null && usage; fi
 
-readonly LOG_FILE=$(mktemp -t $(basename "$0").log)
-info()    { printf "\n[INFO] $@\n"    | tee -a "$LOG_FILE" >&2 ; }
-warning() { printf "\n[WARNING] $@\n" | tee -a "$LOG_FILE" >&2 ; }
-error()   { printf "\n[ERROR] $@\n"   | tee -a "$LOG_FILE" >&2 ; exit 1 ; }
-fatal()   { printf "\n[FATAL] $@\n"   | tee -a "$LOG_FILE" >&2 ; exit 1 ; }
+readonly LOG_FILE="/tmp/$(basename "$0").log"
+info()    { echo "INFO:  $@" | tee -a "$LOG_FILE" >&2 ; }
+warn()    { echo "WARN:  $@" | tee -a "$LOG_FILE" >&2 ; }
+error()   { echo "ERROR: $@" | tee -a "$LOG_FILE" >&2 ; }
+fatal()   { echo "FATAL: $@" | tee -a "$LOG_FILE" >&2 ; exit 1 ; }
 
 cleanup() {
     rm "$LOG_FILE"
@@ -37,8 +48,9 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
     trap cleanup EXIT
 
     awk -F$'\t' "/$1/{total += \$10; count++ } END { print total/count }" \
-        ~/these/gc-content/data/2017-02-24_prokaryotes.tsv \
+        $BIO_SOURCE_DIR/data/2017-02-24_prokaryotes.tsv \
         2> "$LOG_FILE" || \
         error "Species not found.\n\tSpecies name are usually case sensitive."
+
 
 fi
