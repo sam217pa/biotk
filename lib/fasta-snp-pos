@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
+usage() {
+    cat <<END_DOC
+USAGE:
+
+  bio $(basename $0) <multi-fasta-file.fasta> <reference-name>
+
+DESCRIPTION:
+
+  This script computes the positions of each SNP in a multi-fasta file.
+  It will generate one file per sequence in the multi-fasta file
+  containing the position of divergence with reference specified in the
+  second argument of the script.
+
+OPTIONS:
+
+  --help: Display this help message
+
+AUTHOR:
+
+  Samuel Barreto, (2017-05-29)
+
+END_DOC
+
+    exit 0
+}
+
+expr "$*" : ".*--help" > /dev/null && usage
+if [ $# -lt 2 ]; then > /dev/null && usage; fi
+
+readonly LOG_FILE="/tmp/$(basename "$0").log"
+info()    { echo "INFO:  $@" | tee -a "$LOG_FILE" >&2 ; }
+warn()    { echo "WARN:  $@" | tee -a "$LOG_FILE" >&2 ; }
+error()   { echo "ERROR: $@" | tee -a "$LOG_FILE" >&2 ; }
+fatal()   { echo "FATAL: $@" | tee -a "$LOG_FILE" >&2 ; exit 1 ; }
+
+cleanup() {
+    rm -f markers.db
+}
+
+checkin() {
+    rm -f "$1".markers
+}
+
+if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
+    trap cleanup EXIT
+
+    # find SNPs in the multi-fasta file and output in VCF format.
+    snp-sites -v "$1"
+
+    # create a sqlite3 database to query
+    cat "$1".vcf | \
+        sed -e '/^##/d' -e 's/^#//' |
+        apop_text_to_db - markers markers.db
+    rm "$1".vcf
+
+    # query this database per column, column names are found in the
+    # multi-fasta file via grep and exclude the reference name.
+    for seqname in $(grep '^>' "$1" | sed -e 's/>//' -e "/$2/d")
+    do
+        checkin "$seqname"
+        sqlite3 markers.db \
+                "select POS from markers where $2 != $seqname" \
+                > "$seqname".markers
+
+        info "Markers of $seqname"
+        cat "$seqname".markers | \
+            tr  '\n' ' ' | \
+            sed -e 's/[[:space:]]$/\n/g'
+    done
+
+fi
