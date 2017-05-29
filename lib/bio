@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
+bold=$(tput bold)
+normal=$(tput sgr0)
+
+usage() {
+    cat <<END_DOC
+USAGE:
+
+  bio bacterial-gc-content <species-name>
+  bio clustal-to-fasta < <STDIN>
+  bio fasta-snp-pos <multi-fasta-file.fasta> <reference-name>
+  bio genbank-query [options] <query>
+
+SYNOPSIS:
+
+  ${bold}bio${normal} is a simple utility I set up to gather ad-hoc
+  scripts written in Bash or Perl to do stuff I do often like computing
+  GC-contents for a bacterial species, downloading sequence from
+  genbank, converting Clustal output from MUSCLE to Fasta and computing
+  the position of divergence in a multi-fasta file.
+
+DESCRIPTION:
+
+  Detailed description of each subcommand can be found with :
+
+    $ bio <subcommand> --help
+
+  ${bold}bacterial-gc-content${normal}:
+    Computes the mean GC content of prokaryotic species as reported in
+    genomes reports on NCBI.
+
+  ${bold}clustal-to-fasta${normal}:
+    Converts an alignment in CLW format to a multi-fasta one.
+
+  ${bold}fasta-snp-pos${normal}:
+    Computes the position of divergence in a multi-fasta alignment.
+
+  ${bold}genbank-query${normal}:
+    Query and download Genbank for a given accession number.
+
+OPTIONS:
+
+  --help: Display this help message
+
+AUTHOR:
+
+  Samuel Barreto, (2017-05-29)
+
+END_DOC
+
+    exit 0
+}
+
+if [ $# -eq 0 ]; then > /dev/null && usage; fi
+expr "$1" : ".*--help" > /dev/null && usage
+
+readonly LOG_FILE="/tmp/$(basename "$0").log"
+info()    { echo "INFO:  $@" | tee -a "$LOG_FILE" >&2 ; }
+warn()    { echo "WARN:  $@" | tee -a "$LOG_FILE" >&2 ; }
+error()   { echo "ERROR: $@" | tee -a "$LOG_FILE" >&2 ; }
+fatal()   { echo "FATAL: $@" | tee -a "$LOG_FILE" >&2 ; exit 1 ; }
+
+cleanup() {
+  unset progname bold normal
+  echo "" ;
+}
+
+if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
+    trap cleanup EXIT
+
+    progname="$1"
+    shift
+
+    exec $BIO_SOURCE_DIR/lib/"$progname" "$@"
+fi
