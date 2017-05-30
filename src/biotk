@@ -9,14 +9,14 @@ usage() {
     cat <<END_DOC
 USAGE:
 
-  bio bacterial-gc-content <species-name>
-  bio clustal-to-fasta < <STDIN>
-  bio fasta-snp-pos <multi-fasta-file.fasta> <reference-name>
-  bio genbank-query [options] <query>
+  biotk bacterial-gc-content <species-name>
+  biotk clustal-to-fasta < <STDIN>
+  biotk fasta-snp-pos <multi-fasta-file.fasta> <reference-name>
+  biotk genbank-query [options] <query>
 
 SYNOPSIS:
 
-  ${bold}bio${normal} is a simple utility I set up to gather ad-hoc
+  ${bold}biotk${normal} is a simple utility I set up to gather ad-hoc
   scripts written in Bash or Perl to do stuff I do often like computing
   GC-contents for a bacterial species, downloading sequence from
   genbank, converting Clustal output from MUSCLE to Fasta and computing
@@ -26,7 +26,7 @@ DESCRIPTION:
 
   Detailed description of each subcommand can be found with :
 
-    $ bio <subcommand> --help
+    $ biotk <subcommand> --help
 
   ${bold}bacterial-gc-content${normal}:
     Computes the mean GC content of prokaryotic species as reported in
@@ -74,5 +74,5 @@ if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
     progname="$1"
     shift
 
-    exec $BIO_SOURCE_DIR/lib/"$progname" "$@"
+    exec $BIO_SOURCE_DIR/src/"$progname" "$@"
 fi

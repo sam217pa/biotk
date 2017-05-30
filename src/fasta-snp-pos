@@ -6,7 +6,7 @@ usage() {
     cat <<END_DOC
 USAGE:
 
-  bio $(basename $0) <multi-fasta-file.fasta> <reference-name>
+  biotk $(basename $0) <multi-fasta-file.fasta> <reference-name>
 
 DESCRIPTION:
 

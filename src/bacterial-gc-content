@@ -6,7 +6,7 @@ usage() {
     cat <<END_DOC
 USAGE:
 
-  bio bacterial-gc-content <species-name>
+  biotk bacterial-gc-content <species-name>
 
 DESCRIPTION:
 
@@ -16,7 +16,7 @@ DESCRIPTION:
 
 EXAMPLES:
 
-    $ bacterial-gc-content Escherichia
+    $ biotk bacterial-gc-content Escherichia
 
 OPTIONS:
 
