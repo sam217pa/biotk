@@ -47,7 +47,7 @@ cleanup() {
 if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
     trap cleanup EXIT
 
-    awk -F$'\t' "/$1/{total += \$10; count++ } END { print total/count }" \
+    awk -F'\t' "/$1/{total += \$8; count++ } END { print total/count }" \
         $BIO_SOURCE_DIR/data/prokaryotes.tsv \
         2> "$LOG_FILE" || \
         error "Species not found.\n\tSpecies name are usually case sensitive."
