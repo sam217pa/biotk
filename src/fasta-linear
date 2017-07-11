@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
+readonly LOG_FILE="/tmp/$(basename "$0").log"
+BLUE=$(tput setab 4; tput setaf 7)
+RED=$(tput setaf 1)
+ERROR=$(tput setab 9; tput setaf 7)
+RESET=$(tput reset)
+
+info()    { echo -e "${BLUE}INFO:  $@${RESET}" | tee -a "$LOG_FILE" >&2 ; }
+warn()    { echo -e "${RED}WARN:  $@${RESET}" | tee -a "$LOG_FILE" >&2 ; }
+error()   { echo -e "${ERROR}ERROR: $@${RESET}" | tee -a "$LOG_FILE" >&2 ; }
+fatal()   { echo -e "${ERROR}FATAL: $@${RESET}" | tee -a "$LOG_FILE" >&2 ; exit 1 ; }
+
+
+usage() {
+    cat <<END_DOC
+USAGE:
+
+    biotk fasta-linear < STDIN
+
+DESCRIPTION:
+
+    Linearise a multi fasta file to fit each sequence on its own line.
+
+OPTIONS:
+
+    --help: Display this help message
+
+AUTHOR:
+
+    Samuel Barreto, (2017-07-05)
+
+END_DOC
+
+    exit 0
+}
+
+# if [ $# -eq 0 ]; then > /dev/null && usage; fi
+expr "$*" : ".*--help" > /dev/null && usage
+
+cleanup() {
+    # unset TEMPVAR
+    unset BLUE RED ERROR RESET
+}
+
+if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
+    trap cleanup EXIT
+    awk 'NR==1 {print ; next} {printf /^>/ ? "\n"$0"\n" : $1} END {printf "\n"}'
+fi

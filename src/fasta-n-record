@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
+readonly LOG_FILE="/tmp/$(basename "$0").log"
+
+info()    { echo -e "INFO:  $@" | tee -a "$LOG_FILE" >&2 ; }
+warn()    { echo -e "WARN:  $@" | tee -a "$LOG_FILE" >&2 ; }
+error()   { echo -e "ERROR: $@" | tee -a "$LOG_FILE" >&2 ; }
+fatal()   { echo -e "FATAL: $@" | tee -a "$LOG_FILE" >&2 ; exit 1 ; }
+
+
+usage() {
+    cat <<END_DOC
+USAGE:
+
+    biotk fasta-n-record <N> <sequence.fasta>
+
+DESCRIPTION:
+
+    Print nth record in fasta sequence. Sequence.fasta must be
+    linearized. Use biotk fasta-linear.
+
+OPTIONS:
+
+    --help: Display this help message
+
+AUTHOR:
+
+    Samuel Barreto, (2017-07-05)
+
+END_DOC
+
+    exit 0
+}
+
+if [ $# -ne 2 ]; then > /dev/null && usage; fi
+expr "$*" : ".*--help" > /dev/null && usage
+
+cleanup() {
+    # unset TEMPVAR
+    echo ""
+}
+
+if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
+    trap cleanup EXIT
+
+    awk -v n="$1" '/^>/ && !--n {print;getline;print}' "$2" |\
+        sed '/^$/d'          # delete blank line
+
+fi
