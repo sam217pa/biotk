@@ -21,6 +21,7 @@ EXAMPLES:
 OPTIONS:
 
   --help: Display this help message
+  --full: Display full dataset filtered for <species-name>
 
 AUTHOR:
 
@@ -35,22 +36,32 @@ expr "$*" : ".*--help" > /dev/null && usage
 if [ $# -eq 0 ]; then > /dev/null && usage; fi
 
 readonly LOG_FILE="/tmp/$(basename "$0").log"
-info()    { echo "INFO:  $@" | tee -a "$LOG_FILE" >&2 ; }
-warn()    { echo "WARN:  $@" | tee -a "$LOG_FILE" >&2 ; }
-error()   { echo "ERROR: $@" | tee -a "$LOG_FILE" >&2 ; }
-fatal()   { echo "FATAL: $@" | tee -a "$LOG_FILE" >&2 ; exit 1 ; }
+BLUE=$(tput setab 4; tput setaf 7)
+RED=$(tput setaf 1)
+ERROR=$(tput setab 9; tput setaf 7)
+RESET=$(tput sgr 0)
+
+info()    { echo -e "${BLUE}INFO:  $@${RESET}"  | tee -a "$LOG_FILE" >&2 ; }
+warn()    { echo -e "${RED}WARN:  $@${RESET}"   | tee -a "$LOG_FILE" >&2 ; }
+error()   { echo -e "${ERROR}ERROR: $@${RESET}" | tee -a "$LOG_FILE" >&2 ; }
+fatal()   { echo -e "${ERROR}FATAL: $@${RESET}" | tee -a "$LOG_FILE" >&2 ; exit 1 ; }
 
 cleanup() {
-    rm "$LOG_FILE"
+    rm -f "$LOG_FILE"
+    unset BLUE RED ERROR RESET
 }
 
 if [[ "${BASH_SOURCE[0]}" = "$0" ]]; then
     trap cleanup EXIT
 
-    awk -F'\t' "/$1/{total += \$8; count++ } END { print total/count }" \
+    if  expr "$*" : ".*--full" > /dev/null; then
+        sed -n '1p'  $BIO_SOURCE_DIR/data/prokaryotes.tsv | sed -e 's/^#//' | cut -f -13;
+        awk -F'\t' "/${!#}/ {print}" "$BIO_SOURCE_DIR/data/prokaryotes.tsv" | cut -f -13
+
+    else
+        awk -F'\t' "/${!#}/{total += \$8; count++ } END { print total/count }" \
         $BIO_SOURCE_DIR/data/prokaryotes.tsv \
         2> "$LOG_FILE" || \
-        error "Species not found.\n\tSpecies name are usually case sensitive."
-
-
+        error "Species not found. (Hint: Species name are usually case sensitive.)"
+    fi
 fi

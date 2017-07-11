@@ -2,6 +2,13 @@
 set -euo pipefail
 IFS=$'\n\t'
 
+readonly LOG_FILE="/tmp/$(basename "$0").log"
+info()    { echo "INFO:  $@" | tee -a "$LOG_FILE" >&2 ; }
+warn()    { echo "WARN:  $@" | tee -a "$LOG_FILE" >&2 ; }
+error()   { echo "ERROR: $@" | tee -a "$LOG_FILE" >&2 ; }
+fatal()   { echo "FATAL: $@" | tee -a "$LOG_FILE" >&2 ; exit 1 ; }
+
+
 usage() {
     cat <<END_DOC
 USAGE:
@@ -29,13 +36,7 @@ END_DOC
 }
 
 expr "$*" : ".*--help" > /dev/null && usage
-if [ $# -lt 2 ]; then > /dev/null && usage; fi
-
-readonly LOG_FILE="/tmp/$(basename "$0").log"
-info()    { echo "INFO:  $@" | tee -a "$LOG_FILE" >&2 ; }
-warn()    { echo "WARN:  $@" | tee -a "$LOG_FILE" >&2 ; }
-error()   { echo "ERROR: $@" | tee -a "$LOG_FILE" >&2 ; }
-fatal()   { echo "FATAL: $@" | tee -a "$LOG_FILE" >&2 ; exit 1 ; }
+if [ $# -lt 2 ]; then > /dev/null && error "Missing argument"; usage; fi
 
 cleanup() {
     rm -f markers.db

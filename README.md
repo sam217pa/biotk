@@ -38,9 +38,8 @@ Query and download Genbank for a given accession number.
 
 # AUTHOR
 
-Samuel Barreto
+Samuel Barreto (samuel.barreto8@gmail.com)
 
-samuel.barreto8@gmail.com
 twitter : @samuel_barreto8
 
 # LICENSE
