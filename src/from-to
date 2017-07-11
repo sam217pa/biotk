@@ -7,34 +7,15 @@ use Bio::AlignIO;
 use Getopt::Long qw(GetOptions);
 use Pod::Usage qw(pod2usage);
 
-my $from = "";
-my $to   = "";
-my $man = 0;
-my $help = 0;
-my $force_seq = 0;
+my $from      = "" ;
+my $to        = "" ;
+my $man       = 0  ;
+my $help      = 0  ;
+my $force_seq = 0  ;
 
-my @format_input =
-  ( "abi", "ace", "agave", "alf", "asciitree", "bsml", "bsml_sax",
-    "chadoxml", "chaos", "chaosxml", "ctf", "embl", "entrezgene",
-    "excel", "exp", "fasta", "fastq", "flybase_chadoxml", "game", "gcg",
-    "genbank", "interpro", "kegg", "largefasta", "lasergene",
-    "locuslink", "metafasta", "phd", "pir", "pln", "qual", "raw", "scf",
-    "seqxml", "strider", "swiss", "tab", "table", "tigr", "tigrxml",
-    "tinyseq", "ztr" );
 
-my @align_input =
-  ( "bl2seq", "clustalw", "emboss", "fasta", "maf", "mase",
-    "mega", "meme", "metafasta", "msf", "nexus", "pfam",
-    "phylip", "po", "prodom", "psi", "selex", "stockholm",
-    "xmfa", "arp" );
-
-my @align_output =
-  ( "fasta", "mase", "selex", "clustalw", "msf", "phylip", "po",
-    "stockholm", "XMFA", "metafasta" );
-
-GetOptions(
-           'from=s' => \$from,
-           'to=s'   => \$to,
+GetOptions('in=s' => \$from,
+           'out=s'   => \$to,
            'seq'    => \$force_seq,
            'help|?' => \$help,
            'man'    => \$man,
@@ -43,36 +24,65 @@ GetOptions(
 pod2usage(1) if $help;
 pod2usage(-verbose => 2) if $man;
 
-
 # check that stdin exists or arguments are provided
 pod2usage(0) if ((@ARGV == 0) && (-t STDIN));
 
-if (grep { $_ eq $from} @align_input && grep { $_ eq $to} @align_output ) {
+if (check_aln_format($from, $to)) {
   my $seqin  = Bio::AlignIO->new('-format' => $from, '-fh' => \*STDIN);
   my $seqout = Bio::AlignIO->new('-format' => $to, '-fh' => \*STDOUT);
 
-  while ( my $seq = $seqin->next_seq) {
-    $seqout->write_seq($seq);
+  while ( my $seq = $seqin->next_aln) {
+    $seqout->write_aln($seq);
   }
-
-} elsif (grep { $_ eq $from } @format_input && grep { $_ eq $to } @format_input ) {
-  # do the seqio thing
+} elsif (check_seq_format($from, $to)) {
   my $seqin  = Bio::SeqIO->new('-format' => $from, '-fh' => \*STDIN);
   my $seqout = Bio::SeqIO->new('-format' => $to,   '-fh' => \*STDOUT);
 
   while ( my $seq = $seqin->next_seq) {
     $seqout->write_seq($seq);
   }
-
-} elsif (not (grep { $_ eq $from } @format_input) ) {
-  # control $from argument
-  pod2usage("Format $from is not valid.");
 } else {
-  # control $to argument
-  # check that format are in the list of good formats :
-  pod2usage("Format $to is not valid.")
+  pod2usage(-verbose => 1,
+           -message  => "ERROR: Check that file formats are valid.\n");
 }
 
+sub check_aln_format {
+  my ($from, $to) = @_;
+
+  my @align_input =
+  ( "bl2seq", "clustalw", "emboss", "fasta", "maf", "mase",
+    "mega", "meme", "metafasta", "msf", "nexus", "pfam",
+    "phylip", "po", "prodom", "psi", "selex", "stockholm",
+    "xmfa", "arp" );
+
+  my @align_output =
+    ( "fasta", "mase", "selex", "clustalw", "msf", "phylip", "po",
+      "stockholm", "XMFA", "metafasta" );
+
+  if ((grep {$_ eq $from} @align_input) &
+      (grep {$_ eq $to  } @align_output)) {
+    return 1;
+  }
+}
+
+
+sub check_seq_format{
+  my ($from, $to) = @_;
+
+  my @format_input =
+    ( "abi", "ace", "agave", "alf", "asciitree", "bsml", "bsml_sax",
+      "chadoxml", "chaos", "chaosxml", "ctf", "embl", "entrezgene",
+      "excel", "exp", "fasta", "fastq", "flybase_chadoxml", "game", "gcg",
+      "genbank", "interpro", "kegg", "largefasta", "lasergene",
+      "locuslink", "metafasta", "phd", "pir", "pln", "qual", "raw", "scf",
+      "seqxml", "strider", "swiss", "tab", "table", "tigr", "tigrxml",
+      "tinyseq", "ztr" );
+
+  if ((grep {$_ eq $from } @format_input) &
+      (grep {$_ eq $to   } @format_input)) {
+    return 1;
+  }
+}
 
 __END__
 
@@ -82,27 +92,51 @@ from-to - Convert a file from format to format
 
 =head1 SYNOPSIS
 
-  from-to -f <from> -t <to> < STDIN
+  from-to -i <from> -o <to> < STDIN
 
   Options:
-    --from  -f   file format of input
-    --to    -t   file format of output
+    --in    -i   file format of input
+    --out   -t   file format of output
     --help  -h   brief help message
     --man   -m   full documentation
 
 =head1 OPTIONS
 
+=over 2
+
+=item B<--in/to>
+
+File formats to convert from and to.
+Valid formats for SeqIO are :
+
 =over 4
 
-=item B<--from/to>
+abi, ace, agave, alf, asciitree, bsml, bsml_sax, chadoxml, chaos,
+chaosxml, ctf, embl, entrezgene, excel, exp, fasta, fastq,
+flybase_chadoxml, game, gcg, genbank, interpro, kegg, largefasta,
+lasergene, locuslink, metafasta, phd, pir, pln, qual, raw, scf, seqxml,
+strider, swiss, tab, table, tigr, tigrxml, tinyseq, ztr
 
-File formats to convert from and to. Good formats are :
+=back
 
-	abi, ace, agave, alf, asciitree, bsml, bsml_sax, chadoxml, chaos,
-	chaosxml, ctf, embl, entrezgene, excel, exp, fasta, fastq,
-	flybase_chadoxml, game, gcg, genbank, interpro, kegg, largefasta,
-	lasergene, locuslink, metafasta, phd, pir, pln, qual, raw, scf,
-	seqxml, strider, swiss, tab, table, tigr, tigrxml, tinyseq, ztr
+Valid formats for AlignIO input are :
+
+=over 4
+
+bl2seq, clustalw, emboss, fasta, maf, mase, mega, meme,
+metafasta, msf, nexus, pfam, phylip, po, prodom, psi,
+selex, stockholm, xmfa, arp
+
+=back
+
+and valid formats for AlignIO output are :
+
+=over 4
+
+fasta, mase, selex, clustalw, msf, phylip, po,
+stockholm, xmfa, metafasta
+
+=back
 
 Informations are available on http://bioperl.org/howtos/SeqIO_HOWTO#item5.
 
@@ -119,7 +153,7 @@ Prints the manual page and exits.
 =head1 DESCRIPTION
 
 This perl script parses STDIN as a file with format described by the
---from option, and print it to STDOUT as a file with format described by
-the --to option.
+--in option, and print it to STDOUT as a file with format described by
+the --out option.
 
 =cut
