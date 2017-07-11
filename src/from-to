@@ -1,0 +1,125 @@
+#!/usr/bin/env perl
+
+use v5.22;
+use strict;
+use Bio::SeqIO;
+use Bio::AlignIO;
+use Getopt::Long qw(GetOptions);
+use Pod::Usage qw(pod2usage);
+
+my $from = "";
+my $to   = "";
+my $man = 0;
+my $help = 0;
+my $force_seq = 0;
+
+my @format_input =
+  ( "abi", "ace", "agave", "alf", "asciitree", "bsml", "bsml_sax",
+    "chadoxml", "chaos", "chaosxml", "ctf", "embl", "entrezgene",
+    "excel", "exp", "fasta", "fastq", "flybase_chadoxml", "game", "gcg",
+    "genbank", "interpro", "kegg", "largefasta", "lasergene",
+    "locuslink", "metafasta", "phd", "pir", "pln", "qual", "raw", "scf",
+    "seqxml", "strider", "swiss", "tab", "table", "tigr", "tigrxml",
+    "tinyseq", "ztr" );
+
+my @align_input =
+  ( "bl2seq", "clustalw", "emboss", "fasta", "maf", "mase",
+    "mega", "meme", "metafasta", "msf", "nexus", "pfam",
+    "phylip", "po", "prodom", "psi", "selex", "stockholm",
+    "xmfa", "arp" );
+
+my @align_output =
+  ( "fasta", "mase", "selex", "clustalw", "msf", "phylip", "po",
+    "stockholm", "XMFA", "metafasta" );
+
+GetOptions(
+           'from=s' => \$from,
+           'to=s'   => \$to,
+           'seq'    => \$force_seq,
+           'help|?' => \$help,
+           'man'    => \$man,
+          ) or pod2usage(2);
+
+pod2usage(1) if $help;
+pod2usage(-verbose => 2) if $man;
+
+
+# check that stdin exists or arguments are provided
+pod2usage(0) if ((@ARGV == 0) && (-t STDIN));
+
+if (grep { $_ eq $from} @align_input && grep { $_ eq $to} @align_output ) {
+  my $seqin  = Bio::AlignIO->new('-format' => $from, '-fh' => \*STDIN);
+  my $seqout = Bio::AlignIO->new('-format' => $to, '-fh' => \*STDOUT);
+
+  while ( my $seq = $seqin->next_seq) {
+    $seqout->write_seq($seq);
+  }
+
+} elsif (grep { $_ eq $from } @format_input && grep { $_ eq $to } @format_input ) {
+  # do the seqio thing
+  my $seqin  = Bio::SeqIO->new('-format' => $from, '-fh' => \*STDIN);
+  my $seqout = Bio::SeqIO->new('-format' => $to,   '-fh' => \*STDOUT);
+
+  while ( my $seq = $seqin->next_seq) {
+    $seqout->write_seq($seq);
+  }
+
+} elsif (not (grep { $_ eq $from } @format_input) ) {
+  # control $from argument
+  pod2usage("Format $from is not valid.");
+} else {
+  # control $to argument
+  # check that format are in the list of good formats :
+  pod2usage("Format $to is not valid.")
+}
+
+
+__END__
+
+=head1 NAME
+
+from-to - Convert a file from format to format
+
+=head1 SYNOPSIS
+
+  from-to -f <from> -t <to> < STDIN
+
+  Options:
+    --from  -f   file format of input
+    --to    -t   file format of output
+    --help  -h   brief help message
+    --man   -m   full documentation
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<--from/to>
+
+File formats to convert from and to. Good formats are :
+
+	abi, ace, agave, alf, asciitree, bsml, bsml_sax, chadoxml, chaos,
+	chaosxml, ctf, embl, entrezgene, excel, exp, fasta, fastq,
+	flybase_chadoxml, game, gcg, genbank, interpro, kegg, largefasta,
+	lasergene, locuslink, metafasta, phd, pir, pln, qual, raw, scf,
+	seqxml, strider, swiss, tab, table, tigr, tigrxml, tinyseq, ztr
+
+Informations are available on http://bioperl.org/howtos/SeqIO_HOWTO#item5.
+
+=item B<--help>
+
+Print a brief help message and exit.
+
+=item B<--man>
+
+Prints the manual page and exits.
+
+=back
+
+=head1 DESCRIPTION
+
+This perl script parses STDIN as a file with format described by the
+--from option, and print it to STDOUT as a file with format described by
+the --to option.
+
+=cut
