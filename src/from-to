@@ -1,11 +1,40 @@
 #!/usr/bin/env perl
 
+# * GPL3
+#
+# Copyright (C) 2017 Samuel Barreto <samuel.barreto8@gmail.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+#
+#
+# * Synopsis
+#
+# This script will convert from and to any file format know to BioPerl
+# SeqIO or BioPerl AlignIO. It acts as a POSIX filter by parsing STDIN
+# and writing to STDOUT.
+
 use v5.22;
 use strict;
 use Bio::SeqIO;
 use Bio::AlignIO;
 use Getopt::Long qw(GetOptions);
 use Pod::Usage qw(pod2usage);
+
+
+# * Command line options
+
 
 my $from      = "" ;
 my $to        = "" ;
@@ -27,6 +56,10 @@ pod2usage(-verbose => 2) if $man;
 # check that stdin exists or arguments are provided
 pod2usage(0) if ((@ARGV == 0) && (-t STDIN));
 
+
+# * IO
+
+
 if (check_aln_format($from, $to)) {
   my $seqin  = Bio::AlignIO->new('-format' => $from, '-fh' => \*STDIN);
   my $seqout = Bio::AlignIO->new('-format' => $to, '-fh' => \*STDOUT);
@@ -46,6 +79,18 @@ if (check_aln_format($from, $to)) {
            -message  => "ERROR: Check that file formats are valid.\n");
 }
 
+
+# * Helper functions
+#
+# Check that element $elem is in list @list.
+
+sub in {
+  my ($elem, @list) = @_;
+  (grep {$_ eq $elem } @list) ? return 1 : return 0;
+}
+
+# Check that aln format IO are known to BioPerl::AlignIO.
+
 sub check_aln_format {
   my ($from, $to) = @_;
 
@@ -59,14 +104,14 @@ sub check_aln_format {
     ( "fasta", "mase", "selex", "clustalw", "msf", "phylip", "po",
       "stockholm", "XMFA", "metafasta" );
 
-  if ((grep {$_ eq $from} @align_input) &
-      (grep {$_ eq $to  } @align_output)) {
-    return 1;
-  }
+  in($from, @align_input) && in($to, @align_output) ?
+    return 1 :
+    return 0 ;
 }
 
+# Check that seq format IO are known to BioPerl::SeqIO.
 
-sub check_seq_format{
+sub check_seq_format {
   my ($from, $to) = @_;
 
   my @format_input =
@@ -78,10 +123,9 @@ sub check_seq_format{
       "seqxml", "strider", "swiss", "tab", "table", "tigr", "tigrxml",
       "tinyseq", "ztr" );
 
-  if ((grep {$_ eq $from } @format_input) &
-      (grep {$_ eq $to   } @format_input)) {
-    return 1;
-  }
+  in($from, @format_input) && in($to, @format_input) ?
+    return 1 :
+    return 0;
 }
 
 __END__
@@ -104,7 +148,7 @@ from-to - Convert a file from format to format
 
 =over 2
 
-=item B<--in/to>
+=item B<--in/out>
 
 File formats to convert from and to.
 Valid formats for SeqIO are :
